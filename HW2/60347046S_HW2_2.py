@@ -19,8 +19,6 @@ for dirPath, dirNames, fileNames in os.walk('./QueryTrainSet/QUERY_WDID_NEW/'):
         temp_list2.append(os.path.join(dirPath, f))
 Query_filenames = {i:f for i,f in enumerate(temp_list2)}
 
-
-
 N = len(document_filenames)
 dictionary = set()
 dictionary2 = set()
@@ -29,8 +27,6 @@ Weight = defaultdict(dict)
 document_frequency = defaultdict(int)
 length = defaultdict(float)
 Score = [[["" , 0.0] for i in range(0,N)] for i in range(0,16)]
-
-
 
 def main():
     global Score
@@ -43,29 +39,18 @@ def main():
         index = index + 1
         index2 = 0
 
-        print("index1: " + str(index))
         for id in document_filenames:
             index2 = index2 + 1
-            #print(str(Weight))
             S = similarity(Q,document_filenames[id])
             Score[index-1][index2-1] = [document_filenames[id].strip("./TrainDocSet/SPLIT_DOC_WDID_NEW/") , S]
-            if S > 1:
-                print("F")
-            print("index1: " + str(index) + "; index2: " + str(index2) + " S: " + str(S))
 
-#            if index2 == 5:
-#                break
-   
         document_RANK = sorted(Score[index-1],key = lambda x : x[1],reverse=True)
         with open("ResultsTrainSet.txt",'a') as output:
             output.write("Query " + str(index) + "      " + Q.strip("./QueryTrainSet/QUERY_WDID_NEW/") + " " +str(N) + "\n")
             for i in range(0 , N):
                 output.write(document_RANK[i][0] + "\n")
-        
-    print("complete")
+    print("Finish")
 
-
-    
 def initialize_terms_and_postings():
     global dictionary,dictionary2,postings
     for id in document_filenames:
@@ -82,8 +67,6 @@ def initialize_terms_and_postings():
         for term in unique_terms:
             postings[term][document_filenames[id]] = terms.count(term)
             document_frequency[term] += 1
-
-            
     for id in Query_filenames:      
         f = codecs.open(Query_filenames[id],'r', encoding = 'UTF-8')
         Query = f.read()
@@ -95,16 +78,9 @@ def initialize_terms_and_postings():
         for term in unique_terms2:
             postings[term][Query_filenames[id]] = terms.count(term)
 
-
-
-        
-
-
 def tokenize(document):
     terms = document.split()
     return [term for term in terms]
-
-
 
 def initialize_weight():
     for term in dictionary:
@@ -122,8 +98,6 @@ def inverse_document_frequency(term):
     else:
         return 0.0
 
-
-
 def initialize_lengths():
     global length
     for id in document_filenames:
@@ -140,35 +114,27 @@ def initialize_lengths():
             if Query_filenames[id] in Weight[term]:
                 l += (Weight[term][Query_filenames[id]])**2
         length[id] = math.sqrt(l)
- 
-
-
-    
 
 def similarity(Q,document):
     similarity = 0.0
-    a = 0.0
-    b = 0.0
-    c = 0.0
-    d = 0.0
+    tf_q = 0.0
+    tf_d = 0.0
     for id in Query_filenames:
         if Q == Query_filenames[id]:
-            c = length[id]
+            tf_q = length[id]
     for id in document_filenames:
         if document == document_filenames[id]:
-            d = length[id]
+            tf_d = length[id]
 
     for term in dictionary:
+	idf_q = 0.0
+	idf_d = 0.0
         if Q in Weight[term]:
-            a = Weight[term][Q]
-        else:
-            a = 0.0
+            idf_q = Weight[term][Q]
         if document in Weight[term]:
-            b = Weight[term][document]
-        else:
-            b = 0.0
-        similarity += (a * b)
-    similarity = similarity / (c * d)
+            idf_d = Weight[term][document]
+        similarity += (idf_q*idf_d)
+    similarity /= (tf_q * tf_d)
     return similarity
 
 if __name__ == "__main__":
